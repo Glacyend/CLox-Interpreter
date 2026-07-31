@@ -36,6 +36,16 @@ int disassemble_instruction(Chunk* chunk, int offset) {
     switch (instruction) {
         case OpConstant:
             return constant_instruction("Constant", chunk, offset);
+        case OpAdd:
+            return simple_instruction("Add", offset);
+        case OpSubtract:
+            return simple_instruction("Subtract", offset);
+        case OpMultiply:
+            return simple_instruction("Multiply", offset);
+        case OpDivide:
+            return simple_instruction("Devide", offset);
+        case OpNegate:
+            return simple_instruction("Negate", offset);
         case OpReturn:
             return simple_instruction("Return", offset);
         default:

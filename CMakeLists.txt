@@ -9,6 +9,8 @@ set(
     src/common.h
     src/debug.h
     src/memory.h
+    src/value.h
+    src/vm.h
 )
 set(
     SOURCES
@@ -17,6 +19,7 @@ set(
     src/main.c
     src/memory.c
     src/value.c
+    src/vm.c
 )
 
 add_executable(lox ${HEADERS} ${SOURCES})

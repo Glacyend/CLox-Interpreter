@@ -6,6 +6,11 @@
 
 typedef enum {
     OpConstant,
+    OpAdd,
+    OpSubtract,
+    OpMultiply,
+    OpDivide,
+    OpNegate,
     OpReturn,
 } OpCode;
 
