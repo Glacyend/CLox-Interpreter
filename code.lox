@@ -1,0 +1,7 @@
+fun say_hello(prefix, name) {
+    print prefix + "! I'm " + name + "!";
+}
+
+var name = readline();
+say_hello("Hello", name);
+say_hello("Goodbye", name);
