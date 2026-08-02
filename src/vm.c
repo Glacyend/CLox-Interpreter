@@ -47,6 +47,10 @@ static Value peek(int distance) {
     return vm.stack_top[-1 - distance];
 }
 
+static bool is_falsey(Value value) {
+    return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
+}
+
 static InterpretResult run() {
     #define READ_BYTE() (*vm.ip++)
     #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()]);
@@ -80,6 +84,32 @@ static InterpretResult run() {
                 push(constant);
                 break;
             }
+            case OpNil: {
+                push(NIL_VAL);
+                break;
+            }
+            case OpTrue: {
+                push(BOOL_VAL(true));
+                break;
+            }
+            case OpFalse: {
+                push(BOOL_VAL(false));
+                break;
+            }
+            case OpEqual: {
+                Value b = pop();
+                Value a = pop();
+                push(BOOL_VAL(values_equal(a, b)));
+                break;
+            }
+            case OpGreater: {
+                BINARY_OP(BOOL_VAL, >);
+                break;
+            }
+            case OpLess: {
+                BINARY_OP(BOOL_VAL, <);
+                break;
+            }
             case OpAdd: {
                 BINARY_OP(NUMBER_VAL, +);
                 break;
@@ -94,6 +124,10 @@ static InterpretResult run() {
             }
             case OpDivide: {
                 BINARY_OP(NUMBER_VAL, /);
+                break;
+            }
+            case OpNot: {
+                push(BOOL_VAL(is_falsey(pop())));
                 break;
             }
             case OpNegate: {

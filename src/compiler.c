@@ -141,6 +141,30 @@ static void binary() {
     parse_precedence((Precedence)(rule->precedence + 1));
 
     switch (operator_type) {
+        case TokenBangEqual: {
+            emit_bytes(OpEqual, OpNot);
+            break;
+        }
+        case TokenEqualEqual: {
+            emit_byte(OpEqual);
+            break;
+        }
+        case TokenGreater: {
+            emit_byte(OpGreater);
+            break;
+        }
+        case TokenGreaterEqual: {
+            emit_bytes(OpLess, OpNot);
+            break;
+        }
+        case TokenLess: {
+            emit_byte(OpLess);
+            break;
+        }
+        case TokenLessEqual: {
+            emit_bytes(OpGreater, OpNot);
+            break;
+        }
         case TokenPlus: {
             emit_byte(OpAdd);
             break;
@@ -163,6 +187,26 @@ static void binary() {
     }
 }
 
+static void literal() {
+    switch (parser.previous.type) {
+        case TokenFalse: {
+            emit_byte(OpFalse);
+            break;
+        }
+        case TokenNil: {
+            emit_byte(OpNil);
+            break;
+        }
+        case TokenTrue: {
+            emit_byte(OpTrue);
+            break;
+        }
+        default: {  // Unreachable.
+            return;
+        }
+    }
+}
+
 static void grouping() {
     expression();
     consume(TokenRightParen, "Expect `)` after expression.");
@@ -179,6 +223,10 @@ static void unary() {
     parse_precedence(PrecUnary);
 
     switch (operator_type) {
+        case TokenBang: {
+            emit_byte(OpNot);
+            break;
+        }
         case TokenMinus: {
             emit_byte(OpNegate);
             break;
@@ -190,46 +238,46 @@ static void unary() {
 }
 
 ParseRule rules[] = {
-    [TokenLeftParen]    = { grouping, NULL,   PrecNone      },
-    [TokenRightParen]   = { NULL,     NULL,   PrecNone      },
-    [TokenLeftBrace]    = { NULL,     NULL,   PrecNone      },
-    [TokenRightBrace]   = { NULL,     NULL,   PrecNone      },
-    [TokenComma]        = { NULL,     NULL,   PrecNone      },
-    [TokenDot]          = { NULL,     NULL,   PrecNone      },
-    [TokenMinus]        = { unary,    binary, PrecTerm      },
-    [TokenPlus]         = { NULL,     binary, PrecTerm      },
-    [TokenSemicolon]    = { NULL,     NULL,   PrecNone      },
-    [TokenSlash]        = { NULL,     binary, PrecFactor    },
-    [TokenStar]         = { NULL,     binary, PrecFactor    },
-    [TokenBang]         = { NULL,     NULL,   PrecNone      },
-    [TokenBangEqual]    = { NULL,     NULL,   PrecNone      },
-    [TokenEqual]        = { NULL,     NULL,   PrecNone      },
-    [TokenEqualEqual]   = { NULL,     NULL,   PrecNone      },
-    [TokenGreater]      = { NULL,     NULL,   PrecNone      },
-    [TokenGreaterEqual] = { NULL,     NULL,   PrecNone      },
-    [TokenLess]         = { NULL,     NULL,   PrecNone      },
-    [TokenLessEqual]    = { NULL,     NULL,   PrecNone      },
-    [TokenIdentifier]   = { NULL,     NULL,   PrecNone      },
-    [TokenString]       = { NULL,     NULL,   PrecNone      },
-    [TokenNumber]       = { number,   NULL,   PrecNone      },
-    [TokenAnd]          = { NULL,     NULL,   PrecNone      },
-    [TokenClass]        = { NULL,     NULL,   PrecNone      },
-    [TokenElse]         = { NULL,     NULL,   PrecNone      },
-    [TokenFalse]        = { NULL,     NULL,   PrecNone      },
-    [TokenFor]          = { NULL,     NULL,   PrecNone      },
-    [TokenFun]          = { NULL,     NULL,   PrecNone      },
-    [TokenIf]           = { NULL,     NULL,   PrecNone      },
-    [TokenNil]          = { NULL,     NULL,   PrecNone      },
-    [TokenOr]           = { NULL,     NULL,   PrecNone      },
-    [TokenPrint]        = { NULL,     NULL,   PrecNone      },
-    [TokenReturn]       = { NULL,     NULL,   PrecNone      },
-    [TokenSuper]        = { NULL,     NULL,   PrecNone      },
-    [TokenThis]         = { NULL,     NULL,   PrecNone      },
-    [TokenTrue]         = { NULL,     NULL,   PrecNone      },
-    [TokenVar]          = { NULL,     NULL,   PrecNone      },
-    [TokenWhile]        = { NULL,     NULL,   PrecNone      },
-    [TokenError]        = { NULL,     NULL,   PrecNone      },
-    [TokenEOF]          = { NULL,     NULL,   PrecNone      },
+    [TokenLeftParen]    = { grouping, NULL,   PrecNone       },
+    [TokenRightParen]   = { NULL,     NULL,   PrecNone       },
+    [TokenLeftBrace]    = { NULL,     NULL,   PrecNone       },
+    [TokenRightBrace]   = { NULL,     NULL,   PrecNone       },
+    [TokenComma]        = { NULL,     NULL,   PrecNone       },
+    [TokenDot]          = { NULL,     NULL,   PrecNone       },
+    [TokenMinus]        = { unary,    binary, PrecTerm       },
+    [TokenPlus]         = { NULL,     binary, PrecTerm       },
+    [TokenSemicolon]    = { NULL,     NULL,   PrecNone       },
+    [TokenSlash]        = { NULL,     binary, PrecFactor     },
+    [TokenStar]         = { NULL,     binary, PrecFactor     },
+    [TokenBang]         = { unary,    NULL,   PrecNone       },
+    [TokenBangEqual]    = { NULL,     binary, PrecEquality   },
+    [TokenEqual]        = { NULL,     NULL,   PrecNone       },
+    [TokenEqualEqual]   = { NULL,     binary, PrecEquality   },
+    [TokenGreater]      = { NULL,     binary, PrecComparison },
+    [TokenGreaterEqual] = { NULL,     binary, PrecComparison },
+    [TokenLess]         = { NULL,     binary, PrecComparison },
+    [TokenLessEqual]    = { NULL,     binary, PrecComparison },
+    [TokenIdentifier]   = { NULL,     NULL,   PrecNone       },
+    [TokenString]       = { NULL,     NULL,   PrecNone       },
+    [TokenNumber]       = { number,   NULL,   PrecNone       },
+    [TokenAnd]          = { NULL,     NULL,   PrecNone       },
+    [TokenClass]        = { NULL,     NULL,   PrecNone       },
+    [TokenElse]         = { NULL,     NULL,   PrecNone       },
+    [TokenFalse]        = { literal,  NULL,   PrecNone       },
+    [TokenFor]          = { NULL,     NULL,   PrecNone       },
+    [TokenFun]          = { NULL,     NULL,   PrecNone       },
+    [TokenIf]           = { NULL,     NULL,   PrecNone       },
+    [TokenNil]          = { literal,  NULL,   PrecNone       },
+    [TokenOr]           = { NULL,     NULL,   PrecNone       },
+    [TokenPrint]        = { NULL,     NULL,   PrecNone       },
+    [TokenReturn]       = { NULL,     NULL,   PrecNone       },
+    [TokenSuper]        = { NULL,     NULL,   PrecNone       },
+    [TokenThis]         = { NULL,     NULL,   PrecNone       },
+    [TokenTrue]         = { literal,  NULL,   PrecNone       },
+    [TokenVar]          = { NULL,     NULL,   PrecNone       },
+    [TokenWhile]        = { NULL,     NULL,   PrecNone       },
+    [TokenError]        = { NULL,     NULL,   PrecNone       },
+    [TokenEOF]          = { NULL,     NULL,   PrecNone       },
 };
 
 static void parse_precedence(Precedence precedence) {

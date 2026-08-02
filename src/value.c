@@ -3,6 +3,24 @@
 #include "memory.h"
 #include "value.h"
 
+bool values_equal(Value a, Value b) {
+    if (a.type != b.type) {
+        return false;
+    }
+
+    switch (a.type) {
+        case ValBool: {
+            return AS_BOOL(a) == AS_BOOL(b);
+        }
+        case ValNil: {
+            return true;
+        }
+        case ValNumber: {
+            return AS_NUMBER(a) == AS_NUMBER(b);
+        }
+    }
+}
+
 void init_value_array(ValueArray* array) {
     array->values = NULL;
     array->capacity = 0;
@@ -26,5 +44,18 @@ void free_value_array(ValueArray* array) {
 }
 
 void print_value(Value value) {
-    printf("%g", AS_NUMBER(value));
+    switch (value.type) {
+        case ValBool: {
+            printf(AS_BOOL(value) ? "true" : "false");
+            break;
+        }
+        case ValNil: {
+            printf("nil");
+            break;
+        }
+        case ValNumber: {
+            printf("%g", AS_NUMBER(value));
+            break;
+        }
+    }
 }

@@ -270,7 +270,7 @@ Token scan_token() {
             return make_token(TokenStar);
         }
         case '!': {
-            return make_token(match('=') ? TokenBangEqual : TokenEqual);
+            return make_token(match('=') ? TokenBangEqual : TokenBang);
         }
         case '=': {
             return make_token(match('=') ? TokenEqualEqual : TokenEqual);
