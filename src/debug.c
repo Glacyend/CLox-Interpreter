@@ -42,6 +42,14 @@ int disassemble_instruction(Chunk* chunk, int offset) {
             return simple_instruction("True", offset);
         case OpFalse:
             return simple_instruction("False", offset);
+        case OpPop:
+            return simple_instruction("Pop", offset);
+        case OpGetGlobal:
+            return constant_instruction("GetGlobal", chunk, offset);
+        case OpDefineGlobal:
+            return constant_instruction("DefineGlobal", chunk, offset);
+        case OpSetGlobal:
+            return constant_instruction("SetGlobal", chunk, offset);
         case OpEqual:
             return simple_instruction("Equal", offset);
         case OpGreater:
@@ -60,6 +68,8 @@ int disassemble_instruction(Chunk* chunk, int offset) {
             return simple_instruction("Not", offset);
         case OpNegate:
             return simple_instruction("Negate", offset);
+        case OpPrint:
+            return simple_instruction("Print", offset);
         case OpReturn:
             return simple_instruction("Return", offset);
         default:
