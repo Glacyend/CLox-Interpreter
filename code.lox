@@ -1,17 +1,21 @@
-var scope = "global";
-var global = 1;
+var num = 15;
 
-print "Current scope: " + scope;
-print global * 2;
+print "Target:";
+print num;
 
-{
-    var scope = "inner";
-    var inner = global * 2 + 3;
-    var result = inner / global;
-
-    print "Current scope: " + scope;
-    print result * 100;
+var result;
+if (num <= 2) {
+    result = 1;
+} else {
+    var first = 1;
+    var second = 1;
+    for (var i = 3; i <= num; i = i + 1) {
+        var temp = first;
+        first = second;
+        second = second + temp;
+    }
+    result = second;
 }
 
-print "Current scope: " + scope;
-print global / 2;
+print "Result:";
+print result;
