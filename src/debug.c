@@ -24,6 +24,12 @@ static int simple_instruction(const char* name, int offset) {
     return offset + 1;
 }
 
+static int byte_instruction(const char* name, Chunk* chunk, int offset) {
+    uint8_t slot = chunk->code[offset + 1];
+    printf("%-16s %4d\n", name, slot);
+    return offset + 2;
+}
+
 int disassemble_instruction(Chunk* chunk, int offset) {
     printf("%04d ", offset);
     if (offset > 0 && chunk->lines[offset] == chunk->lines[offset - 1]) {
@@ -44,6 +50,10 @@ int disassemble_instruction(Chunk* chunk, int offset) {
             return simple_instruction("False", offset);
         case OpPop:
             return simple_instruction("Pop", offset);
+        case OpGetLocal:
+            return byte_instruction("GetLocal", chunk, offset);
+        case OpSetLocal:
+            return byte_instruction("SetLocal", chunk, offset);
         case OpGetGlobal:
             return constant_instruction("GetGlobal", chunk, offset);
         case OpDefineGlobal:

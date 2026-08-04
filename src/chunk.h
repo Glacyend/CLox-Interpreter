@@ -10,6 +10,8 @@ typedef enum {
     OpTrue,
     OpFalse,
     OpPop,
+    OpGetLocal,
+    OpSetLocal,
     OpGetGlobal,
     OpDefineGlobal,
     OpSetGlobal,

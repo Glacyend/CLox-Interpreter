@@ -1,5 +1,17 @@
-var breakfast = "beignets";
-var beverage = "cafe au lait";
-breakfast = "beignets with " + beverage;
+var scope = "global";
+var global = 1;
 
-print breakfast;
+print "Current scope: " + scope;
+print global * 2;
+
+{
+    var scope = "inner";
+    var inner = global * 2 + 3;
+    var result = inner / global;
+
+    print "Current scope: " + scope;
+    print result * 100;
+}
+
+print "Current scope: " + scope;
+print global / 2;
