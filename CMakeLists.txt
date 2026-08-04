@@ -13,6 +13,7 @@ set(
     src/memory.h
     src/object.h
     src/scanner.h
+    src/table.h
     src/value.h
     src/vm.h
 )
@@ -25,6 +26,7 @@ set(
     src/memory.c
     src/object.c
     src/scanner.c
+    src/table.c
     src/value.c
     src/vm.c
 )
