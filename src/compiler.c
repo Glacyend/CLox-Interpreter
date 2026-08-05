@@ -44,7 +44,15 @@ typedef struct {
     int depth;
 } Local;
 
-typedef struct {
+typedef enum {
+    TypeFunction,
+    TypeScript,
+} FunctionType;
+
+typedef struct Compiler {
+    struct Compiler* enclosing;
+    ObjFunction* function;
+    FunctionType type;
     Local locals[UINT8_COUNT];
     int local_count;
     int scope_depth;
@@ -52,10 +60,9 @@ typedef struct {
 
 Parser parser;
 Compiler* current = NULL;
-Chunk* compiling_chunk;
 
 static Chunk* current_chunk() {
-    return compiling_chunk;
+    return &current->function->chunk;
 }
 
 static void error_at(Token* token, const char* message) {\
@@ -147,6 +154,7 @@ static int emit_jump(uint8_t instruction) {
 }
 
 static void emit_return() {
+    emit_byte(OpNil);
     emit_byte(OpReturn);
 }
 
@@ -175,20 +183,36 @@ static void patch_jump(int offset) {
     current_chunk()->code[offset + 1] = jump & 0xFF;
 }
 
-static void init_compiler(Compiler* compiler) {
+static void init_compiler(Compiler* compiler, FunctionType type) {
+    compiler->enclosing = current;
+    compiler->function = NULL;
+    compiler->type = type;
     compiler->local_count = 0;
     compiler->scope_depth = 0;
+    compiler->function = new_function();
     current = compiler;
+    if (type != TypeScript) {
+        current->function->name = copy_string(parser.previous.start, parser.previous.length);
+    }
+
+    Local* local = &current->locals[current->local_count++];
+    local->depth = 0;
+    local->name.start = "";
+    local->name.length = 0;
 }
 
-static void end_compiler() {
+static ObjFunction* end_compiler() {
     emit_return();
+    ObjFunction* function = current->function;
 
     #ifdef DEBUG_PRINT_CODE
     if (!parser.had_error) {
-        disassemble_chunk(current_chunk(), "code");
+        disassemble_chunk(current_chunk(), function->name != NULL ? function->name->chars : "script");
     }
     #endif
+
+    current = current->enclosing;
+    return function;
 }
 
 static void begin_scope() {
@@ -276,6 +300,9 @@ static uint8_t parse_variable(const char* error_message) {
 }
 
 static void mark_initialized() {
+    if (current->scope_depth == 0) {
+        return;
+    }
     current->locals[current->local_count - 1].depth = current->scope_depth;
 }
 
@@ -286,6 +313,21 @@ static void define_variable(uint8_t global) {
     }
 
     emit_bytes(OpDefineGlobal, global);
+}
+
+static uint8_t argument_list() {
+    uint8_t arg_count = 0;
+    if (!check(TokenRightParen)) {
+        do {
+            expression();
+            if (arg_count == 255) {
+                error("Can't have more than 255 arguments.");
+            }
+            arg_count++;
+        } while (match(TokenComma));
+    }
+    consume(TokenRightParen, "Expect `)` after arguments.");
+    return arg_count;
 }
 
 static void and_op([[maybe_unused]] bool can_assign) {
@@ -347,6 +389,11 @@ static void binary([[maybe_unused]] bool can_assign) {
             return;
         }
     }
+}
+
+static void call([[maybe_unused]] bool can_assign) {
+    uint8_t arg_count = argument_list();
+    emit_bytes(OpCall, arg_count);
 }
 
 static void literal([[maybe_unused]] bool can_assign) {
@@ -439,7 +486,7 @@ static void unary([[maybe_unused]] bool can_assign) {
 }
 
 ParseRule rules[] = {
-    [TokenLeftParen]    = { grouping, NULL,   PrecNone       },
+    [TokenLeftParen]    = { grouping, call,   PrecCall       },
     [TokenRightParen]   = { NULL,     NULL,   PrecNone       },
     [TokenLeftBrace]    = { NULL,     NULL,   PrecNone       },
     [TokenRightBrace]   = { NULL,     NULL,   PrecNone       },
@@ -517,6 +564,37 @@ static void block() {
     }
 
     consume(TokenRightBrace, "Expect `}` after block.");
+}
+
+static void function(FunctionType type) {
+    Compiler compiler;
+    init_compiler(&compiler, type);
+    begin_scope();
+
+    consume(TokenLeftParen, "Expect `(` after function name.");
+    if (!check(TokenRightParen)) {
+        do {
+            current->function->arity++;
+            if (current->function->arity > 255) {
+                error_at_current("Can't have more than 255 parameters.");
+            }
+            uint8_t constant = parse_variable("Expect parameter name.");
+            define_variable(constant);
+        } while (match(TokenComma));
+    }
+    consume(TokenRightParen, "Expect `)` after parameters.");
+    consume(TokenLeftBrace, "Expect `{` before function body.");
+    block();
+
+    ObjFunction* function = end_compiler();
+    emit_bytes(OpConstant, make_constant(OBJ_VAL(function)));
+}
+
+static void fun_declaration() {
+    uint8_t global = parse_variable("Expect function name.");
+    mark_initialized();
+    function(TypeFunction);
+    define_variable(global);
 }
 
 static void var_declaration() {
@@ -609,6 +687,20 @@ static void print_statement() {
     emit_byte(OpPrint);
 }
 
+static void return_statement() {
+    if (current->type == TypeScript) {
+        error("Can't return from top-level code.");
+    }
+    
+    if (match(TokenSemicolon)) {
+        emit_return();
+    } else {
+        expression();
+        consume(TokenSemicolon, "Expect `;` after return value.");
+        emit_byte(OpReturn);
+    }
+}
+
 static void while_statement() {
     int loop_start = current_chunk()->count;
     consume(TokenLeftParen, "Expect `(` after `while`.");
@@ -650,7 +742,9 @@ static void synchronize() {
 }
 
 static void declaration() {
-    if (match(TokenVar)) {
+    if (match(TokenFun)) {
+        fun_declaration();
+    } else if (match(TokenVar)) {
         var_declaration();
     } else {
         statement();
@@ -668,6 +762,8 @@ static void statement() {
         for_statement();
     } else if (match(TokenIf)) {
         if_statement();
+    } else if (match(TokenReturn)) {
+        return_statement();
     } else if (match(TokenWhile)) {
         while_statement();
     } else if (match(TokenLeftBrace)) {
@@ -679,11 +775,10 @@ static void statement() {
     }
 }
 
-bool compile(const char* source, Chunk* chunk) {
+ObjFunction* compile(const char* source) {
     init_scanner(source);
     Compiler compiler;
-    init_compiler(&compiler);
-    compiling_chunk = chunk;
+    init_compiler(&compiler, TypeScript);
 
     parser.had_error = false;
     parser.panic_mode = false;
@@ -694,6 +789,6 @@ bool compile(const char* source, Chunk* chunk) {
         declaration();
     }
 
-    end_compiler();
-    return !parser.had_error;
+    ObjFunction* function = end_compiler();
+    return parser.had_error ? NULL : function;
 }

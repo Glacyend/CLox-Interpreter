@@ -1,21 +1,25 @@
-var num = 15;
-
-print "Target:";
-print num;
-
-var result;
-if (num <= 2) {
-    result = 1;
-} else {
-    var first = 1;
-    var second = 1;
-    for (var i = 3; i <= num; i = i + 1) {
-        var temp = first;
-        first = second;
-        second = second + temp;
+fun fib(n) {
+    if (n < 2) {
+        return n;
     }
-    result = second;
+    return fib(n - 1) + fib(n - 2);
 }
 
-print "Result:";
-print result;
+print "Password:";
+var password = readline();
+
+if (password == "123456@abcdef") {
+    print "Enter the program.";
+
+    var start = clock();
+    var result = fib(35);
+    var end = clock();
+
+    print "Result:";
+    print result;
+    print "Time (ms):";
+    print (end - start) * 1000;
+} else {
+    print "Password incorrect.";
+    print "The program exited.";
+}

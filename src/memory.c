@@ -18,6 +18,16 @@ void* reallocate(void* pointer, [[maybe_unused]] size_t old_size, size_t new_siz
 
 static void free_object(Obj* object) {
     switch (object->type) {
+        case ObjTyFunction: {
+            ObjFunction* function = (ObjFunction*)object;
+            free_chunk(&function->chunk);
+            FREE(ObjFunction, object);
+            break;
+        }
+        case ObjTyNative: {
+            FREE(ObjNative, object);
+            break;
+        }
         case ObjTyString: {
             ObjString* string = (ObjString*)object;
             FREE_ARRAY(char, string->chars, string->length + 1);

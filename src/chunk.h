@@ -28,6 +28,7 @@ typedef enum {
     OpJump,
     OpJumpIfFalse,
     OpLoop,
+    OpCall,
     OpReturn,
 } OpCode;
 
