@@ -1,21 +1,18 @@
-fun outer() {
-    var x = 0;
-    fun middle() {
-        fun inner() {
-            x = x + 1;
-            print x;
-        }
-
-        print "create inner closure";
-        return inner;
+fun greet(what, name) {
+    if (name == nil) {
+        print what + ", THE UNKNOWN!";
+    } else {
+        print what + ", " + name + "!";
     }
-
-    print "return from outer";
-    return middle;
 }
 
-var mid = outer();
-var in = mid();
-in();
-in();
-in();
+print "Enter your name here:";
+var name = readline();
+
+if (name == "") {
+    greet("Hello", nil);
+    greet("Goodbye", nil);
+} else {
+    greet("Hello", name);
+    greet("Goodbye", name);
+}
