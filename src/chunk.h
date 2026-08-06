@@ -15,6 +15,8 @@ typedef enum {
     OpGetGlobal,
     OpDefineGlobal,
     OpSetGlobal,
+    OpGetUpvalue,
+    OpSetUpvalue,
     OpEqual,
     OpGreater,
     OpLess,
@@ -29,6 +31,8 @@ typedef enum {
     OpJumpIfFalse,
     OpLoop,
     OpCall,
+    OpClosure,
+    OpCloseUpvalue,
     OpReturn,
 } OpCode;
 

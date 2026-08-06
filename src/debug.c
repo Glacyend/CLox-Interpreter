@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "debug.h"
+#include "object.h"
 #include "value.h"
 
 void disassemble_chunk(Chunk* chunk, const char* name) {
@@ -37,6 +38,23 @@ static int jump_instruction(const char* name, int sign, Chunk* chunk, int offset
     return offset + 3;
 }
 
+static int closure_instruction(const char* name, Chunk* chunk, int offset) {
+    offset++;
+    uint8_t constant = chunk->code[offset++];
+    printf("%-16s %4d ", name, constant);
+    print_value(chunk->constants.values[constant]);
+    printf("\n");
+
+    ObjFunction* function = AS_FUNCTION(chunk->constants.values[constant]);
+    for (int j = 0; j < function->upvalue_count; j++) {
+        int is_local = chunk->code[offset++];
+        int index = chunk->code[offset++];
+        printf("%04d      |                    %s %d\n", offset - 2, is_local ? "local" : "upvalue", index);
+    }
+
+    return offset;
+}
+
 int disassemble_instruction(Chunk* chunk, int offset) {
     printf("%04d ", offset);
     if (offset > 0 && chunk->lines[offset] == chunk->lines[offset - 1]) {
@@ -67,6 +85,10 @@ int disassemble_instruction(Chunk* chunk, int offset) {
             return constant_instruction("DefineGlobal", chunk, offset);
         case OpSetGlobal:
             return constant_instruction("SetGlobal", chunk, offset);
+        case OpGetUpvalue:
+            return byte_instruction("GetUpvalue", chunk, offset);
+        case OpSetUpvalue:
+            return byte_instruction("SetUpvalue", chunk, offset);
         case OpEqual:
             return simple_instruction("Equal", offset);
         case OpGreater:
@@ -95,6 +117,10 @@ int disassemble_instruction(Chunk* chunk, int offset) {
             return jump_instruction("Loop", -1, chunk, offset);
         case OpCall:
             return byte_instruction("Call", chunk, offset);
+        case OpClosure:
+            return closure_instruction("Closure", chunk, offset);
+        case OpCloseUpvalue:
+            return simple_instruction("CloseUpvalue", offset);
         case OpReturn:
             return simple_instruction("Return", offset);
         default:
