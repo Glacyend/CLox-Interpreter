@@ -19,6 +19,7 @@ typedef enum {
     OpSetUpvalue,
     OpGetProperty,
     OpSetProperty,
+    OpGetSuper,
     OpEqual,
     OpGreater,
     OpLess,
@@ -34,10 +35,12 @@ typedef enum {
     OpLoop,
     OpCall,
     OpInvoke,
+    OpSuperInvoke,
     OpClosure,
     OpCloseUpvalue,
     OpReturn,
     OpClass,
+    OpInherit,
     OpMethod,
 } OpCode;
 

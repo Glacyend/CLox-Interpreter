@@ -70,6 +70,7 @@ typedef struct Compiler {
 
 typedef struct ClassCompiler {
     struct ClassCompiler* enclosing;
+    bool has_superclass;
 } ClassCompiler;
 
 Parser parser;
@@ -553,6 +554,36 @@ static void variable(bool can_assign) {
     named_variable(parser.previous, can_assign);
 }
 
+static Token synthetic_token(const char* text) {
+    Token token;
+    token.start = text;
+    token.length = (int)strlen(text);
+    return token;
+}
+
+static void super([[maybe_unused]] bool can_assign) {
+    if (current_class == NULL) {
+        error("Can't use `super` outside of a class.");
+    } else if (!current_class->has_superclass) {
+        error("Can't use `super` in a class with no superclass.");
+    }
+
+    consume(TokenDot, "Expect `.` after `super`.");
+    consume(TokenIdentifier, "Expect superclass method name.");
+    uint8_t name = identifier_constant(&parser.previous);
+
+    named_variable(synthetic_token("this"), false);
+    if (match(TokenLeftParen)) {
+        uint8_t arg_count = argument_list();
+        named_variable(synthetic_token("super"), false);
+        emit_bytes(OpSuperInvoke, name);
+        emit_byte(arg_count);
+    } else {
+        named_variable(synthetic_token("super"), false);
+        emit_bytes(OpGetSuper, name);
+    }
+}
+
 static void this_var([[maybe_unused]] bool can_assign) {
     if (current_class == NULL) {
         error("Can't use `this` outside of a class.");
@@ -615,7 +646,7 @@ ParseRule rules[] = {
     [TokenOr]           = { NULL,     or_op,  PrecOr         },
     [TokenPrint]        = { NULL,     NULL,   PrecNone       },
     [TokenReturn]       = { NULL,     NULL,   PrecNone       },
-    [TokenSuper]        = { NULL,     NULL,   PrecNone       },
+    [TokenSuper]        = { super,    NULL,   PrecNone       },
     [TokenThis]         = { this_var, NULL,   PrecNone       },
     [TokenTrue]         = { literal,  NULL,   PrecNone       },
     [TokenVar]          = { NULL,     NULL,   PrecNone       },
@@ -714,8 +745,26 @@ static void class_declaration() {
     define_variable(name_constant);
 
     ClassCompiler class_compiler;
+    class_compiler.has_superclass = false;
     class_compiler.enclosing = current_class;
     current_class = &class_compiler;
+
+    if (match(TokenLess)) {
+        consume(TokenIdentifier, "Expect superclass name.");
+        variable(false);
+
+        if (identifiers_equal(&class_name, &parser.previous)) {
+            error("A class can't inherit from itself.");
+        }
+
+        begin_scope();
+        add_local(synthetic_token("super"));
+        define_variable(0);
+
+        named_variable(class_name, false);
+        emit_byte(OpInherit);
+        class_compiler.has_superclass = true;
+    }
 
     named_variable(class_name, false);
     consume(TokenLeftBrace, "Expect `{` before class body.");
@@ -724,6 +773,10 @@ static void class_declaration() {
     }
     consume(TokenRightBrace, "Expect `}` after class body.");
     emit_byte(OpPop);
+
+    if (class_compiler.has_superclass) {
+        end_scope();
+    }
 
     current_class = current_class->enclosing;
 }

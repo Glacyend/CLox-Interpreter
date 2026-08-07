@@ -102,6 +102,8 @@ int disassemble_instruction(Chunk* chunk, int offset) {
             return constant_instruction("GetProperty", chunk, offset);
         case OpSetProperty:
             return constant_instruction("SetProperty", chunk, offset);
+        case OpGetSuper:
+            return constant_instruction("GetSuper", chunk, offset);
         case OpEqual:
             return simple_instruction("Equal", offset);
         case OpGreater:
@@ -132,6 +134,8 @@ int disassemble_instruction(Chunk* chunk, int offset) {
             return byte_instruction("Call", chunk, offset);
         case OpInvoke:
             return invoke_instruction("Invoke", chunk, offset);
+        case OpSuperInvoke:
+            return invoke_instruction("SuperInvoke", chunk, offset);
         case OpClosure:
             return closure_instruction("Closure", chunk, offset);
         case OpCloseUpvalue:
@@ -140,6 +144,8 @@ int disassemble_instruction(Chunk* chunk, int offset) {
             return simple_instruction("Return", offset);
         case OpClass:
             return constant_instruction("Class", chunk, offset);
+        case OpInherit:
+            return simple_instruction("Inherit", offset);
         case OpMethod:
             return constant_instruction("Method", chunk, offset);
         default:

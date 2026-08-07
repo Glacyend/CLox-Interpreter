@@ -214,7 +214,7 @@ static bool invoke(ObjString* name, int arg_count) {
         vm.stack_top[-arg_count - 1] = value;
         return call_value(value, arg_count);
     }
-    
+
     return invoke_from_class(instance->cls, name, arg_count);
 }
 
@@ -418,6 +418,15 @@ static InterpretResult run() {
                 push(value);
                 break;
             }
+            case OpGetSuper: {
+                ObjString* name = READ_STRING();
+                ObjClass* superclass = AS_CLASS(pop());
+
+                if (!bind_method(superclass, name)) {
+                    return InterpretRuntimeError;
+                }
+                break;
+            }
             case OpEqual: {
                 Value b = pop();
                 Value a = pop();
@@ -508,6 +517,16 @@ static InterpretResult run() {
                 frame = &vm.frames[vm.frame_count - 1];
                 break;
             }
+            case OpSuperInvoke: {
+                ObjString* method = READ_STRING();
+                int arg_count = READ_BYTE();
+                ObjClass* superclass = AS_CLASS(pop());
+                if (!invoke_from_class(superclass, method, arg_count)) {
+                    return InterpretRuntimeError;
+                }
+                frame = &vm.frames[vm.frame_count - 1];
+                break;
+            }
             case OpClosure: {
                 ObjFunction* function = AS_FUNCTION(READ_CONSTANT());
                 ObjClosure* closure = new_closure(function);
@@ -543,6 +562,17 @@ static InterpretResult run() {
             }
             case OpClass: {
                 push(OBJ_VAL(new_class(READ_STRING())));
+                break;
+            }
+            case OpInherit: {
+                Value superclass = peek(1);
+                if (!IS_CLASS(superclass)) {
+                    runtime_error("Superclass must be a class.");
+                    return InterpretRuntimeError;
+                }
+                ObjClass* subclass = AS_CLASS(peek(0));
+                table_add_all(&AS_CLASS(superclass)->methods, &subclass->methods);
+                pop();
                 break;
             }
             case OpMethod: {
