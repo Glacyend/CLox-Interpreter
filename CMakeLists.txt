@@ -35,5 +35,9 @@ add_executable(lox ${HEADERS} ${SOURCES})
 target_compile_options(lox PUBLIC -O2 -Wall -Wextra)
 
 add_executable(lox-debug ${HEADERS} ${SOURCES})
-target_compile_options(lox-debug PUBLIC -g -Wall -Wextra -fsanitize=address,bounds,undefined -DDEBUG_PRINT_CODE -DDEBUG_TRACE_EXECUTION -DDEBUG_STRESS_GC -DDEBUG_LOG_GC)
+target_compile_options(lox-debug PUBLIC -g -Wall -Wextra -fsanitize=address,bounds,undefined -DDEBUG_PRINT_CODE -DDEBUG_TRACE_EXECUTION -DDEBUG_LOG_GC)
 target_link_options(lox-debug PUBLIC -fsanitize=address,bounds,undefined)
+
+add_executable(lox-debug-gc ${HEADERS} ${SOURCES})
+target_compile_options(lox-debug-gc PUBLIC -g -Wall -Wextra -fsanitize=address,bounds,undefined -DDEBUG_PRINT_CODE -DDEBUG_TRACE_EXECUTION -DDEBUG_STRESS_GC -DDEBUG_LOG_GC)
+target_link_options(lox-debug-gc PUBLIC -fsanitize=address,bounds,undefined)

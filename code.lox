@@ -1,18 +1,6 @@
-fun greet(what, name) {
-    if (name == nil) {
-        print what + ", THE UNKNOWN!";
-    } else {
-        print what + ", " + name + "!";
-    }
-}
+class Pair {}
 
-print "Enter your name here:";
-var name = readline();
-
-if (name == "") {
-    greet("Hello", nil);
-    greet("Goodbye", nil);
-} else {
-    greet("Hello", name);
-    greet("Goodbye", name);
-}
+var pair = Pair();
+pair.first = 1;
+pair.second = 2;
+print pair.first + pair.second;

@@ -89,6 +89,10 @@ int disassemble_instruction(Chunk* chunk, int offset) {
             return byte_instruction("GetUpvalue", chunk, offset);
         case OpSetUpvalue:
             return byte_instruction("SetUpvalue", chunk, offset);
+        case OpGetProperty:
+            return constant_instruction("GetProperty", chunk, offset);
+        case OpSetProperty:
+            return constant_instruction("SetProperty", chunk, offset);
         case OpEqual:
             return simple_instruction("Equal", offset);
         case OpGreater:
@@ -123,6 +127,8 @@ int disassemble_instruction(Chunk* chunk, int offset) {
             return simple_instruction("CloseUpvalue", offset);
         case OpReturn:
             return simple_instruction("Return", offset);
+        case OpClass:
+            return constant_instruction("Class", chunk, offset);
         default:
             printf("Unknown opcode %d\n", instruction);
             return offset + 1;

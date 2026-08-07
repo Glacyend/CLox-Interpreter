@@ -17,6 +17,8 @@ typedef enum {
     OpSetGlobal,
     OpGetUpvalue,
     OpSetUpvalue,
+    OpGetProperty,
+    OpSetProperty,
     OpEqual,
     OpGreater,
     OpLess,
@@ -34,6 +36,7 @@ typedef enum {
     OpClosure,
     OpCloseUpvalue,
     OpReturn,
+    OpClass,
 } OpCode;
 
 typedef struct {
