@@ -20,6 +20,15 @@ static int constant_instruction(const char* name, Chunk* chunk, int offset) {
     return offset + 2;
 }
 
+static int invoke_instruction(const char* name, Chunk* chunk, int offset) {
+    uint8_t constant = chunk->code[offset + 1];
+    uint8_t arg_count = chunk->code[offset + 2];
+    printf("%-16s (%d args) %4d `", name, arg_count, constant);
+    print_value(chunk->constants.values[constant]);
+    printf("`\n");
+    return offset + 3;
+}
+
 static int simple_instruction(const char* name, int offset) {
     printf("%s\n", name);
     return offset + 1;
@@ -121,6 +130,8 @@ int disassemble_instruction(Chunk* chunk, int offset) {
             return jump_instruction("Loop", -1, chunk, offset);
         case OpCall:
             return byte_instruction("Call", chunk, offset);
+        case OpInvoke:
+            return invoke_instruction("Invoke", chunk, offset);
         case OpClosure:
             return closure_instruction("Closure", chunk, offset);
         case OpCloseUpvalue:
@@ -129,6 +140,8 @@ int disassemble_instruction(Chunk* chunk, int offset) {
             return simple_instruction("Return", offset);
         case OpClass:
             return constant_instruction("Class", chunk, offset);
+        case OpMethod:
+            return constant_instruction("Method", chunk, offset);
         default:
             printf("Unknown opcode %d\n", instruction);
             return offset + 1;

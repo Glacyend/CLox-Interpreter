@@ -33,10 +33,12 @@ typedef enum {
     OpJumpIfFalse,
     OpLoop,
     OpCall,
+    OpInvoke,
     OpClosure,
     OpCloseUpvalue,
     OpReturn,
     OpClass,
+    OpMethod,
 } OpCode;
 
 typedef struct {
